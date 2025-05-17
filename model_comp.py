@@ -88,44 +88,45 @@ async def run_parallel_calls(models, prompt, api_key, max_tokens, temperature):
         ]
         return await asyncio.gather(*tasks)
 
-# Run button
-if st.button("Run Comparison") and prompt and api_key and selected_models:
-    with st.spinner("Processing..."):
-        # Run the parallel calls
-        results = asyncio.run(run_parallel_calls(
-            selected_models, prompt, api_key, max_tokens, temperature
-        ))
-        
-        # Display metrics
-        metrics_cols = st.columns(len(results))
-        for i, result in enumerate(results):
-            with metrics_cols[i]:
-                st.metric(
-                    label=f"{result['model'].split('-')[-1].title()}", 
-                    value=f"{result['tokens_used']} tokens",
-                    delta=result['execution_time']
-                )
-        
-        # Display responses in tabs
-        tabs = st.tabs([model.split('-')[-1].title() for model in selected_models])
-        
-        for i, tab in enumerate(tabs):
-            with tab:
-                st.markdown(f"### {results[i]['model']}")
-                st.markdown(results[i]['response'])
-        
-        # Compare side by side
-        st.subheader("Side-by-Side Comparison")
-        comparison_data = pd.DataFrame(results)
-        
-        # Display just model and response columns side by side
-        comparison_view = comparison_data[["model", "response"]].copy()
-        comparison_view["model"] = comparison_view["model"].apply(lambda x: x.split('-')[-1].title())
-        comparison_view = comparison_view.set_index("model").T
-        
-        st.dataframe(comparison_view, use_container_width=True)
-elif st.button("Run Comparison"):
-    st.error("Please provide API key, select models, and enter a prompt")
+# Run button - FIXED: using a single button with one key
+if st.button("Run Comparison", key="run_comparison"):
+    if prompt and api_key and selected_models:
+        with st.spinner("Processing..."):
+            # Run the parallel calls
+            results = asyncio.run(run_parallel_calls(
+                selected_models, prompt, api_key, max_tokens, temperature
+            ))
+            
+            # Display metrics
+            metrics_cols = st.columns(len(results))
+            for i, result in enumerate(results):
+                with metrics_cols[i]:
+                    st.metric(
+                        label=f"{result['model'].split('-')[-1].title()}", 
+                        value=f"{result['tokens_used']} tokens",
+                        delta=result['execution_time']
+                    )
+            
+            # Display responses in tabs
+            tabs = st.tabs([model.split('-')[-1].title() for model in selected_models])
+            
+            for i, tab in enumerate(tabs):
+                with tab:
+                    st.markdown(f"### {results[i]['model']}")
+                    st.markdown(results[i]['response'])
+            
+            # Compare side by side
+            st.subheader("Side-by-Side Comparison")
+            comparison_data = pd.DataFrame(results)
+            
+            # Display just model and response columns side by side
+            comparison_view = comparison_data[["model", "response"]].copy()
+            comparison_view["model"] = comparison_view["model"].apply(lambda x: x.split('-')[-1].title())
+            comparison_view = comparison_view.set_index("model").T
+            
+            st.dataframe(comparison_view, use_container_width=True)
+    else:
+        st.error("Please provide API key, select models, and enter a prompt")
 
 # Add explanatory text
 st.markdown("""
